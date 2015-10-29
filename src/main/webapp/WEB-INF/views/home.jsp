@@ -18,7 +18,7 @@
 		<form:form method="post" modelAttribute="searchForm">
 			<form:select id="locationCode" path="locationCode"
 				onchange="submit()">
-				<form:options items="${cityList}" />
+				<form:options items="${searchForm.cityLocationCodetoNameTable}" />
 			</form:select>
 		</form:form>
 	</div>

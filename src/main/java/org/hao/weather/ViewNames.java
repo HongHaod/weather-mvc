@@ -1,5 +1,5 @@
 package org.hao.weather;
 
-public enum PageFlowAttributes {
+public enum ViewNames {
 	 home;
 }

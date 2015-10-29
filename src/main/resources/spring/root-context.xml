@@ -1,19 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:util="http://www.springframework.org/schema/util"
-	xsi:schemaLocation="
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-	<context:component-scan base-package="org.hao.weather" />
+    <context:component-scan base-package="org.hao.weather" />
 
-	<util:map id="cityLocationCodetoNameTable" map-class="java.util.LinkedHashMap" key-type="java.lang.String"
-		value-type="java.lang.String">
-		<entry key="ASXX0075" value="Melbourne" />
-		<entry key="ASXX0112" value="Sydney" />
-		<entry key="ASXX0124" value="Wollongong" />
-	</util:map>
+    <util:map id="cityLocationCodetoNameTable" map-class="java.util.LinkedHashMap"
+        key-type="java.lang.String" value-type="java.lang.String">
+        <entry key="ASXX0075" value="Melbourne" />
+        <entry key="ASXX0112" value="Sydney" />
+        <entry key="ASXX0124" value="Wollongong" />
+    </util:map>
+
+    <!-- If ProxyHost is not empty, proxy server will be used -->
+    <bean id="yahooServer" class="org.hao.weather.yahoo.YahooServer">
+        <property name="serviceUrl" value="http://weather.yahooapis.com/forecastrss?p=" />
+        <property name="responseSchemaUrl" value="http://xml.weather.yahoo.com/ns/rss/1.0" />
+        <property name="proxyHost" value="" />
+        <property name="proxyPort" value="3128" />
+    </bean>
 </beans>
 

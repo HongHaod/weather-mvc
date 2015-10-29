@@ -24,6 +24,5 @@ public class WeatherServiceImpl implements WeatherService {
         } catch (Exception e) {
             throw new WeatherServiceRuntimeException("Fail to get weather for location " + locationCode, e);
         }
-
     }
 }

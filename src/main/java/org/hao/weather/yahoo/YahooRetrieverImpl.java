@@ -8,27 +8,37 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class YahooRetrieverImpl implements YahooRetriever {
 
     private static Logger log = Logger.getLogger(YahooRetrieverImpl.class);
 
-    /* (non-Javadoc)
+    @Autowired
+    private YahooServer yahooServer;
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.hao.weather.yahoo.YahooRetriever#retrieve(java.lang.String)
      */
     @Override
-    public final InputStream retrieve(final String locationCode) throws Exception  {
-        log.info("Retrieving Weather Data");
-        String url = YAHOOAPI_WEATHER_URL + locationCode + "&" + TEMPARATURE_CELSIUS_CODE;
+    public final InputStream retrieve(final String locationCode) throws Exception {
+        log.info("Retrieving Weather Data for " + locationCode);
+        String url = yahooServer.getServiceUrl() + locationCode + "&" + TEMPARATURE_CELSIUS_CODE;
+        URLConnection conn;
         // Use this if you need to connect via a corporate proxy
-        String proxyHost = "internetproxy";
-        int proxyPort = 3128;
-        SocketAddress addr = new InetSocketAddress(proxyHost, proxyPort);
-        Proxy httpProxy = new Proxy(Proxy.Type.HTTP, addr);
-//        URLConnection conn = new URL(url).openConnection(httpProxy);
-         URLConnection conn = new URL(url).openConnection();
+        if (!StringUtils.isEmpty(yahooServer.getProxyHost()) && yahooServer.getProxyPort() != 0) {
+            SocketAddress addr = new InetSocketAddress(yahooServer.getProxyHost(), yahooServer.getProxyPort());
+            Proxy httpProxy = new Proxy(Proxy.Type.HTTP, addr);
+            conn = new URL(url).openConnection(httpProxy);
+        } else {
+            conn = new URL(url).openConnection();
+        }
+
         return conn.getInputStream();
     }
 }

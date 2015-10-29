@@ -10,7 +10,6 @@ import java.io.InputStream;
  */
 public interface YahooRetriever {
 
-    String YAHOOAPI_WEATHER_URL = "http://weather.yahooapis.com/forecastrssXX?p=";
     String TEMPARATURE_CELSIUS_CODE = "u=c";
 
     InputStream retrieve(final String locationCode) throws Exception;

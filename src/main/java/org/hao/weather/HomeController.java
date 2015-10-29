@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -24,10 +25,11 @@ import org.springframework.web.servlet.ModelAndView;
  * Handles requests for the application home page.
  */
 @Controller
+@SessionAttributes("cityList,searchForm")
 public class HomeController {
 
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
-    
+
     private static final String DATE_TIME_FORMAT = "EEEE hh:mm a";
 
     @Autowired
@@ -35,57 +37,68 @@ public class HomeController {
 
     @Resource
     private LinkedHashMap<String, String> cityLocationCodetoNameTable;
-    
+
     /**
      * Simply selects the home view to render by returning its name.
      */
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public String home(final Locale locale, final Model model, final HttpServletRequest request) {
         logger.info("Welcome home! The client locale is {}.", locale);
-        
-        final HttpSession session = request.getSession();
-        
+
+        final SearchForm searchForm = createSearchForm();
+        model.addAttribute(ModelAttributeNames.searchForm.name(), searchForm);
+        request.getSession().setAttribute(ModelAttributeNames.searchForm.name(), searchForm);
+
+        retrieveAndDisplayWeather(model, locale, searchForm.getLocationCode());
+
+        return ViewNames.home.name();
+    }
+
+    @RequestMapping(value = "/", method = RequestMethod.POST)
+    public String homeSubmit(@ModelAttribute SearchForm searchForm, Locale locale, Model model,
+            final HttpSession session) {
+        searchForm.setCityLocationCodetoNameTable(cityLocationCodetoNameTable);
+        session.setAttribute(ModelAttributeNames.searchForm.name(), searchForm);
+        retrieveAndDisplayWeather(model, locale, searchForm.getLocationCode());
+        return ViewNames.home.name();
+    }
+
+    @ExceptionHandler(WeatherServiceRuntimeException.class)
+    public ModelAndView handleWeatherServiceException(Exception ex, final HttpSession session, final Locale locale) {
+        ModelAndView model = new ModelAndView(ViewNames.home.name());
+        model.addObject(ModelAttributeNames.serverTime.name(), getServerTime(locale));
+        model.addObject(ModelAttributeNames.errorMessage.name(), ex.getMessage());
+        final SearchForm searchForm = (SearchForm)session.getAttribute(ModelAttributeNames.searchForm.name());
+        searchForm.setCityLocationCodetoNameTable(cityLocationCodetoNameTable);
+        model.addObject(ModelAttributeNames.searchForm.name(), searchForm);
+        return model;
+    }
+
+    public void setCityLocationCodetoNameTable(LinkedHashMap<String, String> cityLocationCodetoNameTable) {
+        this.cityLocationCodetoNameTable = cityLocationCodetoNameTable;
+    }
+    
+    private void retrieveAndDisplayWeather(final Model model, final Locale locale, final String locationCode) {
+        model.addAttribute(ModelAttributeNames.serverTime.name(), getServerTime(locale));
+
+        final Weather weather = weatherService.retrieveWeather(locationCode);
+        model.addAttribute(ModelAttributeNames.weather.name(), weather);
+    }
+
+    private String getServerTime(final Locale locale) {
+        final Date now = new Date();
+        final SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_FORMAT, locale);
+        final String formattedDate = sdf.format(now);
+        return formattedDate;
+    }
+    
+    private SearchForm createSearchForm() {
         // When first load the page, display weather for the first city in the configured list of cities
         final String firstLocationCode = cityLocationCodetoNameTable.keySet().iterator().next();
         SearchForm searchForm = new SearchForm();
         searchForm.setLocationCode(firstLocationCode);
-        model.addAttribute(SessionAttributes.searchForm.name(), searchForm);
-        session.setAttribute(SessionAttributes.searchForm.name(), searchForm);
-        
-        retrieveAndDisplayWeather(model, locale, searchForm.getLocationCode());
-
-        return PageFlowAttributes.home.name();
+        searchForm.setCityLocationCodetoNameTable(cityLocationCodetoNameTable);
+        return searchForm;
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST)
-    public String homeSubmit(@ModelAttribute SearchForm searchForm, Locale locale, Model model, final HttpServletRequest request) {
-        final HttpSession session = request.getSession();
-        session.setAttribute(SessionAttributes.searchForm.name(), searchForm);
-        retrieveAndDisplayWeather(model, locale, searchForm.getLocationCode());       
-        return PageFlowAttributes.home.name();
-    }
-    
-    @ExceptionHandler(WeatherServiceRuntimeException.class)
-    public ModelAndView handleAllException(Exception ex, final HttpSession session) {
-        ModelAndView model = new ModelAndView(PageFlowAttributes.home.name());
-        model.addObject(SessionAttributes.errorMessage.name(), ex.getMessage());
-        model.addObject(SessionAttributes.searchForm.name(), session.getAttribute(SessionAttributes.searchForm.name()));
-        return model;
-    }
-
-    private void retrieveAndDisplayWeather(final Model model, final Locale locale, final String locationCode) {
-        final Date now = new Date();
-        final SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_FORMAT, locale);    
-        final String formattedDate = sdf.format(now);
-        model.addAttribute(SessionAttributes.serverTime.name(), formattedDate);       
-        model.addAttribute(SessionAttributes.cityList.name(), cityLocationCodetoNameTable);
-//        try {
-            final Weather weather = weatherService.retrieveWeather(locationCode);
-            model.addAttribute(SessionAttributes.weather.name(), weather);
-//        } catch (Exception e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//
-//        }
-    }
 }
